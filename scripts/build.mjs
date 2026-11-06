@@ -1,12 +1,13 @@
-import { cp, mkdir, stat, writeFile } from 'node:fs/promises';
+import { cp, mkdir, rm, stat, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const output = resolve(root, 'dist');
 const files = ['index.html', 'styles.css', 'app.js', 'data.js', 'assets'];
 for (const path of files) await stat(resolve(root, path));
-await stat(resolve(root, 'assets/bratki-film.webm'));
+for (const id of ['hero','king','positive','negative','pinned','delivery','funny','heart','wise']) await stat(resolve(root, `assets/cosmic/${id}.webp`));
 await mkdir(output, {recursive:true});
-for (const path of files) await cp(resolve(root, path), resolve(output, path), {recursive:true});
+for (const name of ['bratki-film.webm','bratki-trophy.png','bratki-objects.png']) await rm(resolve(output, 'assets', name), {force:true});
+for (const path of files) await cp(resolve(root, path), resolve(output, path), {recursive:true, filter: source => !/bratki-(?:film\.webm|trophy\.png|objects\.png)$/.test(source)});
 await writeFile(resolve(output, '.nojekyll'), '');
-console.log('BRATKI 2026 → dist/ (HTML, CSS, JS, локальные изображения, шрифты и видео)');
+console.log('BRATKI 2026 → dist/ (HTML, CSS, JS, локальные изображения и шрифты; без видео)');

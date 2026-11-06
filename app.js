@@ -38,8 +38,6 @@
   let currentNomination = null;
   let toastTimer;
   const grid = $('#nomination-grid');
-  const heroVideo = $('#hero-video');
-  const filmVideo = $('#film-video');
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const dialogs = document.querySelectorAll('dialog');
   let lastFocus;
@@ -56,7 +54,7 @@
   }
   dialogs.forEach(dialog => {
     dialog.addEventListener('click', event => { if (event.target === dialog) { const rect = dialog.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close(); } });
-    dialog.addEventListener('close', () => { if (![...dialogs].some(d => d.open)) { document.body.style.overflow = ''; const focusTarget = lastFocus?.isConnected && !lastFocus.closest('dialog:not([open])') ? lastFocus : $('[data-open-shortlist]'); focusTarget?.focus({preventScroll:true}); } if (dialog.id === 'film-dialog') filmVideo.pause(); });
+    dialog.addEventListener('close', () => { if (![...dialogs].some(d => d.open)) { document.body.style.overflow = ''; const focusTarget = lastFocus?.isConnected && !lastFocus.closest('dialog:not([open])') ? lastFocus : $('[data-open-shortlist]'); focusTarget?.focus({preventScroll:true}); } });
   });
   document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
   function renderNominations() {
@@ -72,12 +70,21 @@
       nominations.filter(n => n.type === group.type).forEach(n => {
         const index = nominations.indexOf(n) + 1;
         const selected = shortlist[n.id];
-        const card = el('button', `nomination-card${n.id === 'king' ? ' featured' : ''}${selected ? ' selected' : ''}`);
+        const card = el('button', `nomination-card reveal${selected ? ' selected' : ''}`);
         card.type = 'button'; card.dataset.nomination = n.id;
         card.setAttribute('aria-label', `${n.title}${selected ? ', в шорт-листе' : ''}. Открыть номинацию`);
-        card.innerHTML = `<div class="card-top"><span class="card-index">${String(index).padStart(2, '0')} / ${String(nominations.length).padStart(2, '0')}</span><span class="card-tag ${n.type === 'additional' ? 'additional' : ''}">${selected ? '<span class="selected-label">✓ В ШОРТ-ЛИСТЕ</span>' : n.tag.toUpperCase()}</span></div><div class="card-symbol">${icon(n.icon)}</div><div class="card-body"><h4>${n.title}</h4><p>${n.description}</p><span class="card-arrow" aria-hidden="true">${selected ? '✓' : '↗'}</span></div>`;
+        card.style.setProperty('--reveal-delay', `${((index - 1) % 4) * .08}s`);
+        card.innerHTML = `<div class="card-top"><span class="card-index">${String(index).padStart(2, '0')} / 08</span><span class="card-tag ${n.type === 'additional' ? 'additional' : ''}">${selected ? '<span class="selected-label">✓ В ШОРТ-ЛИСТЕ</span>' : n.tag.toUpperCase()}</span></div><div class="card-art"><img src="./assets/cosmic/${n.id}.webp" alt="" loading="lazy" decoding="async" width="1024" height="1536"></div><div class="card-body"><h4>${n.title}</h4><p>${n.description}</p><span class="card-arrow" aria-hidden="true">${selected ? '✓' : '↗'}</span></div>`;
         card.addEventListener('click', () => openNomination(n));
+        card.addEventListener('pointermove', event => {
+          if (!animationEnabled || event.pointerType !== 'mouse') return;
+          const rect = card.getBoundingClientRect();
+          card.style.setProperty('--tilt-x', `${(0.5 - (event.clientY - rect.top) / rect.height) * 5}deg`);
+          card.style.setProperty('--tilt-y', `${((event.clientX - rect.left) / rect.width - 0.5) * 5}deg`);
+        });
+        card.addEventListener('pointerleave', () => { card.style.setProperty('--tilt-x', '0deg'); card.style.setProperty('--tilt-y', '0deg'); });
         grid.append(card);
+        revealObserver.observe(card);
       });
     });
   }
@@ -88,7 +95,9 @@
     $('#nomination-title').textContent = n.title;
     $('#nomination-dialog').setAttribute('aria-labelledby', 'nomination-title');
     $('#nomination-description').textContent = n.criteria + (n.type === 'additional' ? ` В голосование попадут только ${voting.additionalSlots} из четырёх дополнительных номинаций.` : '');
-    $('#nomination-symbol').innerHTML = icon(n.icon);
+    $('#nomination-symbol').replaceChildren();
+    const artwork = el('img'); artwork.src = `./assets/cosmic/${n.id}.webp`; artwork.alt = '';
+    $('#nomination-symbol').append(artwork);
     $('#previous-winner').textContent = n.previous ? `В 2025 награду забрал: ${n.previous}` : '';
     $('#previous-winner').hidden = !n.previous;
     $('#candidate').value = saved?.candidate || '';
@@ -158,22 +167,69 @@
   menuToggle.addEventListener('click', () => { const open = menuToggle.getAttribute('aria-expanded') === 'true'; menuToggle.setAttribute('aria-expanded', String(!open)); menuToggle.setAttribute('aria-label', open ? 'Открыть меню' : 'Закрыть меню'); $('#mobile-menu').hidden = open; });
   $('#mobile-menu').querySelectorAll('a').forEach(a => a.addEventListener('click', () => { $('#mobile-menu').hidden = true; menuToggle.setAttribute('aria-expanded', 'false'); menuToggle.setAttribute('aria-label', 'Открыть меню'); }));
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && !$('#mobile-menu').hidden) { $('#mobile-menu').hidden = true; menuToggle.setAttribute('aria-expanded', 'false'); menuToggle.focus(); } });
-  let animationEnabled = false;
-  async function setAnimation(enabled) {
-    animationEnabled = enabled;
-    $('.hero-media').classList.toggle('motion-enabled', enabled);
-    if (enabled) { try { await heroVideo.play(); } catch { animationEnabled = false; } }
-    else heroVideo.pause();
-    $('#motion-toggle').setAttribute('aria-pressed', String(animationEnabled));
-    $('#motion-toggle').setAttribute('aria-label', animationEnabled ? 'Остановить анимацию фона' : 'Включить анимацию фона');
-    $('#motion-toggle').innerHTML = animationEnabled ? 'Ⅱ <span>Пауза</span>' : '▶ <span>Анимация</span>';
+  const revealObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('is-visible'); revealObserver.unobserve(entry.target); } });
+  }, {threshold:.08});
+  let animationEnabled = !reduceMotion.matches && !navigator.connection?.saveData;
+  const canvas = $('#starfield');
+  const ctx = canvas.getContext('2d');
+  let stars = [], canvasWidth = 0, canvasHeight = 0, animationFrame = 0, lastFrame = 0;
+  let pointerX = 0, pointerY = 0;
+  function resizeStars() {
+    canvasWidth = innerWidth; canvasHeight = innerHeight;
+    const ratio = Math.min(devicePixelRatio || 1, 1.5);
+    canvas.width = Math.round(canvasWidth * ratio); canvas.height = Math.round(canvasHeight * ratio);
+    ctx?.setTransform(ratio, 0, 0, ratio, 0, 0);
+    let seed = 2026;
+    const random = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+    stars = Array.from({length:canvasWidth < 780 ? 65 : 145}, () => ({x:random()*canvasWidth,y:random()*canvasHeight,r:.35+random()*.95,phase:random()*Math.PI*2,speed:.35+random()*.65,cross:random()>.955}));
+    if (!animationEnabled) drawStars(0);
   }
-  $('#motion-toggle').addEventListener('click', () => setAnimation(!animationEnabled));
-  reduceMotion.addEventListener('change', event => { if (event.matches) setAnimation(false); });
-  $('#play-film').addEventListener('click', async () => { openDialog($('#film-dialog')); filmVideo.currentTime = 0; try { await filmVideo.play(); } catch { /* Native video controls remain available. */ } });
-  filmVideo.addEventListener('error', () => toast('Видео не загрузилось. Проверь подключение и попробуй ещё раз.'));
-  new IntersectionObserver(entries => { for (const entry of entries) { if (!entry.isIntersecting) heroVideo.pause(); else if (animationEnabled) heroVideo.play().catch(() => {}); } }, {threshold:.05}).observe($('.hero'));
-  document.addEventListener('visibilitychange', () => { if (document.hidden) heroVideo.pause(); else if (animationEnabled) heroVideo.play().catch(() => {}); });
-  persist(); renderNominations();
-  if (!reduceMotion.matches && !navigator.connection?.saveData) setAnimation(true);
+  function drawStars(time) {
+    if (!ctx) return;
+    ctx.clearRect(0,0,canvasWidth,canvasHeight);
+    const seconds = time / 1000;
+    for (const star of stars) {
+      const opacity = .2 + (Math.sin(seconds*star.speed+star.phase)+1)*.27;
+      const x = star.x + (animationEnabled ? pointerX*star.r*5 : 0), y = star.y + (animationEnabled ? pointerY*star.r*5 : 0);
+      ctx.fillStyle = `rgba(194,217,255,${opacity})`;
+      ctx.beginPath(); ctx.arc(x,y,star.r,0,Math.PI*2); ctx.fill();
+      if (star.cross) {
+        ctx.strokeStyle = `rgba(205,225,255,${opacity*.65})`; ctx.lineWidth=.6;
+        ctx.beginPath(); ctx.moveTo(x-4,y); ctx.lineTo(x+4,y); ctx.moveTo(x,y-4); ctx.lineTo(x,y+4); ctx.stroke();
+      }
+    }
+    const comet = (seconds % 12) / 1.8;
+    if (animationEnabled && comet < 1 && seconds > 1) {
+      const x = canvasWidth*(.85-comet*.6), y = canvasHeight*(.1+comet*.45);
+      const trail = ctx.createLinearGradient(x,y,x+110,y-75); trail.addColorStop(0,`rgba(209,230,255,${Math.sin(comet*Math.PI)*.65})`); trail.addColorStop(1,'rgba(209,230,255,0)');
+      ctx.strokeStyle=trail;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+110,y-75);ctx.stroke();
+    }
+  }
+  function animateStars(time) {
+    if (!animationEnabled || document.hidden) { animationFrame=0; return; }
+    if (time-lastFrame>32) { drawStars(time); lastFrame=time; }
+    animationFrame=requestAnimationFrame(animateStars);
+  }
+  function setAnimation(enabled) {
+    animationEnabled=enabled;
+    document.body.classList.toggle('motion-paused',!enabled);
+    $('#motion-toggle').setAttribute('aria-pressed',String(enabled));
+    $('#motion-toggle').setAttribute('aria-label',enabled?'Остановить анимацию':'Включить анимацию');
+    $('#motion-toggle').innerHTML=`<span aria-hidden="true">${enabled?'Ⅱ':'▷'}</span> Анимация`;
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    animationFrame=0;
+    if (enabled && !document.hidden) animationFrame=requestAnimationFrame(animateStars); else drawStars(0);
+  }
+  $('#motion-toggle').addEventListener('click',()=>setAnimation(!animationEnabled));
+  reduceMotion.addEventListener('change',event=>setAnimation(!event.matches && !navigator.connection?.saveData));
+  window.addEventListener('resize',resizeStars,{passive:true});
+  window.addEventListener('pointermove',event=>{ if (event.pointerType==='mouse') { pointerX=event.clientX/innerWidth-.5; pointerY=event.clientY/innerHeight-.5; } },{passive:true});
+  document.addEventListener('visibilitychange',()=>{ if (document.hidden) { cancelAnimationFrame(animationFrame); animationFrame=0; } else if (animationEnabled && !animationFrame) animationFrame=requestAnimationFrame(animateStars); });
+  const progress=$('.reading-progress');
+  function updateProgress() { const height=document.documentElement.scrollHeight-innerHeight; progress.style.transform=`scaleX(${height>0?Math.min(scrollY/height,1):0})`; }
+  window.addEventListener('scroll',updateProgress,{passive:true});
+  persist(); renderNominations(); resizeStars(); updateProgress();
+  document.querySelectorAll('.reveal').forEach(node=>revealObserver.observe(node));
+  document.body.classList.add('motion-ready'); setAnimation(animationEnabled);
 })();
