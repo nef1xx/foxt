@@ -16,6 +16,8 @@
     bolt: '<path d="m46 5-31 40h23l-5 30 33-43H43Z"/><path d="m12 14 7 4m44 43 7 4M10 61l7-5m47-42 6-4"/>',
     play: '<rect x="8" y="17" width="64" height="47" rx="5"/><path d="m33 29 20 12-20 12ZM16 9h48m-48 63h48"/>',
     heart: '<path d="M40 68 13 41C-4 21 20 2 40 24 60 2 84 21 67 41Z"/><path d="M18 39h13l6-11 8 22 6-11h11"/>',
+    cloud: '<path d="M20 48a13 13 0 0 1-1-26 21 21 0 0 1 40 2 12 12 0 0 1 1 24Z"/><path d="m29 57-5 12m20-12-5 12m20-12-5 12"/>',
+    pin: '<path d="M25 10h30l-5 22 12 14v6H18v-6l12-14ZM40 52v22M25 10h30"/>',
   };
   function icon(name) { return `<svg viewBox="0 0 80 80" class="symbol-svg" aria-hidden="true">${symbols[name] || symbols.star}</svg>`; }
   function el(tag, className, text) { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; }
@@ -33,7 +35,6 @@
     }
   } catch { storageAvailable = false; }
   let filter = 'all';
-  let expanded = false;
   let currentNomination = null;
   let toastTimer;
   const grid = $('#nomination-grid');
@@ -59,30 +60,34 @@
   });
   document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
   function renderNominations() {
-    const matching = nominations.filter(n => filter === 'all' || n.type === filter);
-    const visible = filter === 'all' && !expanded ? matching.slice(0, 6) : matching;
     grid.replaceChildren();
-    visible.forEach(n => {
-      const index = nominations.indexOf(n) + 1;
-      const selected = shortlist[n.id];
-      const card = el('button', `nomination-card${n.id === 'king' ? ' featured' : ''}${selected ? ' selected' : ''}`);
-      card.type = 'button'; card.dataset.nomination = n.id;
-      card.setAttribute('aria-label', `${n.title}${selected ? ', в шорт-листе' : ''}. Открыть номинацию`);
-      card.innerHTML = `<div class="card-top"><span class="card-index">${String(index).padStart(2, '0')} / 12</span><span class="card-tag ${n.type === 'new' ? 'new' : ''}">${selected ? '<span class="selected-label">✓ В ШОРТ-ЛИСТЕ</span>' : n.tag.toUpperCase()}</span></div><div class="card-symbol">${icon(n.icon)}</div><div class="card-body"><h3>${n.title}</h3><p>${n.description}</p><span class="card-arrow" aria-hidden="true">${selected ? '✓' : '↗'}</span></div>`;
-      card.addEventListener('click', () => openNomination(n));
-      grid.append(card);
+    const groups = [
+      { type: 'main', title: 'Основные номинации', note: 'Все четыре — в голосовании' },
+      { type: 'additional', title: 'Дополнительные номинации', note: `В голосование попадут только ${voting.additionalSlots} из четырёх` },
+    ];
+    groups.filter(group => filter === 'all' || group.type === filter).forEach(group => {
+      const heading = el('div', 'nomination-group-heading');
+      heading.append(el('h3', '', group.title), el('p', '', group.note));
+      grid.append(heading);
+      nominations.filter(n => n.type === group.type).forEach(n => {
+        const index = nominations.indexOf(n) + 1;
+        const selected = shortlist[n.id];
+        const card = el('button', `nomination-card${n.id === 'king' ? ' featured' : ''}${selected ? ' selected' : ''}`);
+        card.type = 'button'; card.dataset.nomination = n.id;
+        card.setAttribute('aria-label', `${n.title}${selected ? ', в шорт-листе' : ''}. Открыть номинацию`);
+        card.innerHTML = `<div class="card-top"><span class="card-index">${String(index).padStart(2, '0')} / ${String(nominations.length).padStart(2, '0')}</span><span class="card-tag ${n.type === 'additional' ? 'additional' : ''}">${selected ? '<span class="selected-label">✓ В ШОРТ-ЛИСТЕ</span>' : n.tag.toUpperCase()}</span></div><div class="card-symbol">${icon(n.icon)}</div><div class="card-body"><h4>${n.title}</h4><p>${n.description}</p><span class="card-arrow" aria-hidden="true">${selected ? '✓' : '↗'}</span></div>`;
+        card.addEventListener('click', () => openNomination(n));
+        grid.append(card);
+      });
     });
-    $('#show-all').hidden = filter !== 'all';
-    $('#show-all').style.display = filter === 'all' ? '' : 'none';
-    $('#show-all').innerHTML = expanded ? 'Свернуть до 6 <span aria-hidden="true">↑</span>' : 'Все 12 номинаций <span aria-hidden="true">↓</span>';
   }
   function openNomination(n) {
     currentNomination = n;
     const saved = shortlist[n.id];
-    $('#nomination-label').textContent = n.label || `${n.type === 'new' ? 'НОВАЯ НОМИНАЦИЯ' : 'КЛАССИКА BRATKI'} / 2026`;
+    $('#nomination-label').textContent = n.label || `${n.type === 'additional' ? 'ДОПОЛНИТЕЛЬНАЯ НОМИНАЦИЯ' : 'ОСНОВНАЯ НОМИНАЦИЯ'} / BRATKI ${year}`;
     $('#nomination-title').textContent = n.title;
     $('#nomination-dialog').setAttribute('aria-labelledby', 'nomination-title');
-    $('#nomination-description').textContent = n.criteria;
+    $('#nomination-description').textContent = n.criteria + (n.type === 'additional' ? ` В голосование попадут только ${voting.additionalSlots} из четырёх дополнительных номинаций.` : '');
     $('#nomination-symbol').innerHTML = icon(n.icon);
     $('#previous-winner').textContent = n.previous ? `В 2025 награду забрал: ${n.previous}` : '';
     $('#previous-winner').hidden = !n.previous;
@@ -97,7 +102,6 @@
     document.querySelectorAll('[data-filter]').forEach(b => { const active = b === button; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); });
     renderNominations();
   }));
-  $('#show-all').addEventListener('click', () => { expanded = !expanded; renderNominations(); if (!expanded) $('#nominations').scrollIntoView({block:'start'}); $('#show-all').focus({preventScroll:true}); });
   $('#candidate').addEventListener('input', () => $('#candidate').setCustomValidity(''));
   $('#nomination-form').addEventListener('submit', event => {
     event.preventDefault();
