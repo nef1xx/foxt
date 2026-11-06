@@ -229,6 +229,26 @@
   const progress=$('.reading-progress');
   function updateProgress() { const height=document.documentElement.scrollHeight-innerHeight; progress.style.transform=`scaleX(${height>0?Math.min(scrollY/height,1):0})`; }
   window.addEventListener('scroll',updateProgress,{passive:true});
+  const ticker = $('.ticker');
+  const tickerTrack = $('.ticker-track');
+  const tickerUnit = $('.ticker-unit').cloneNode(true);
+  function fillTicker() {
+    const group = el('div', 'ticker-group');
+    group.append(tickerUnit.cloneNode(true));
+    tickerTrack.replaceChildren(group);
+    const unitWidth = group.getBoundingClientRect().width;
+    if (!unitWidth) return;
+    // Each identical half must cover the viewport for the entire animation cycle.
+    const copies = Math.max(1, Math.ceil(ticker.clientWidth / unitWidth));
+    for (let index = 1; index < copies; index++) group.append(tickerUnit.cloneNode(true));
+    tickerTrack.append(group.cloneNode(true));
+    tickerTrack.style.setProperty('--ticker-duration', `${group.getBoundingClientRect().width / 40}s`);
+    ticker.classList.add('ticker-ready');
+  }
+  const tickerResizeObserver = new ResizeObserver(fillTicker);
+  tickerResizeObserver.observe(ticker);
+  document.fonts.ready.then(fillTicker);
+  fillTicker();
   persist(); renderNominations(); resizeStars(); updateProgress();
   document.querySelectorAll('.reveal').forEach(node=>revealObserver.observe(node));
   document.body.classList.add('motion-ready'); setAnimation(animationEnabled);
