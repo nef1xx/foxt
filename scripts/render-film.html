@@ -1,0 +1,36 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><title>BRATKI — видеостудия</title><style>body{background:#10100f;color:#f18a50;font:18px Arial;max-width:1000px;margin:40px auto}canvas{width:100%}button{padding:15px;background:#f18a50;border:0;font-size:18px;cursor:pointer}</style><h1>BRATKI / локальный рендер</h1><p>8 секунд · 1280×720 · WebM · без звука</p><button id="render">Создать видеопетлю</button><p id="status" role="status">Готов к записи</p><canvas id="canvas" width="1280" height="720"></canvas><script>
+const image = new Image(); image.src = '../assets/bratki-trophy.png';
+const canvas = document.querySelector('canvas'), ctx = canvas.getContext('2d');
+image.onload = () => ctx.drawImage(image, 0, 0, 1280, 720);
+document.querySelector('#render').onclick = async () => {
+  const button = document.querySelector('button'), status = document.querySelector('#status');
+  button.disabled = true;
+  try {
+    await image.decode();
+    const mime = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(type => MediaRecorder.isTypeSupported(type));
+    const stream = canvas.captureStream(30), recorder = new MediaRecorder(stream, {mimeType:mime,videoBitsPerSecond:3500000});
+    const chunks = []; recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
+    const complete = new Promise(resolve => recorder.onstop = resolve);
+    const start = performance.now(), duration = 8000;
+    recorder.start();
+    function frame(now) {
+      const progress = Math.min((now-start)/duration, 1), phase = progress*Math.PI*2;
+      const zoom = 1.015 + .012*Math.sin(phase-Math.PI/2);
+      const w = 1280*zoom, h = 720*zoom;
+      ctx.drawImage(image, (1280-w)/2, (720-h)/2, w, h);
+      for (let i=0;i<22;i++) {
+        const x = ((i*137.91 + progress*40)%1280), y = ((i*83.7-progress*80+720)%720);
+        const alpha = .12 + .2*Math.pow(Math.sin(phase+i),2);
+        ctx.fillStyle = `rgba(247,155,66,${alpha})`; ctx.beginPath(); ctx.arc(x,y,i%3 ? .8 : 1.4,0,Math.PI*2); ctx.fill();
+      }
+      status.textContent = `Запись: ${Math.round(progress*100)}%`;
+      if (progress < 1) requestAnimationFrame(frame); else recorder.stop();
+    }
+    requestAnimationFrame(frame); await complete; stream.getTracks().forEach(track => track.stop());
+    const blob = new Blob(chunks, {type:'video/webm'});
+    const response = await fetch('/__render', {method:'POST',body:blob});
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    status.textContent = `Готово. ${await response.text()} (${(blob.size/1024/1024).toFixed(2)} МБ)`;
+  } catch (error) { status.textContent = `Ошибка: ${error.message}`; button.disabled = false; }
+};
+</script></html>

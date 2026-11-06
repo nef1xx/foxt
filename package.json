@@ -1,0 +1,13 @@
+{
+  "name": "bratki-awards-2026",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Локальная премия друзей BRATKI 2026. Статический сайт для GitHub Pages.",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "check": "node --check app.js && node --check data.js && node --check scripts/serve.mjs && node --check scripts/build.mjs"
+  },
+  "engines": { "node": ">=20" }
+}
