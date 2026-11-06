@@ -3,3 +3,7 @@ node_modules/
 .DS_Store
 *.log
 qa/
+.private/
+.env
+.env.*
+!.env.example

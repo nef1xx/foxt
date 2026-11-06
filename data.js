@@ -2,9 +2,7 @@
 window.BRATKI = {
   year: 2026,
   voting: {
-    // После выбора проверенного сервиса укажите status: 'open' и его HTTPS URL.
-    status: 'preparation',
-    url: '',
+    // Статус голосования приходит с сервера. Подключение — в voting-config.js.
     additionalSlots: 2,
   },
   nominations: [

@@ -1,9 +1,16 @@
 import { cp, mkdir, rm, stat, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { runInNewContext } from 'node:vm';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const output = resolve(root, 'dist');
-const files = ['index.html', 'styles.css', 'app.js', 'data.js', 'assets'];
+const configContext={window:{}};
+runInNewContext(await readFile(resolve(root,'voting-config.js'),'utf8'),configContext,{timeout:1000});
+const votingConfig=configContext.window.BRATKI_VOTING;
+if(Boolean(votingConfig.apiUrl)!==Boolean(votingConfig.publishableKey)) throw new Error('Set both Supabase RPC URL and publishable key, or leave both empty.');
+if(votingConfig.publishableKey && (!votingConfig.publishableKey.startsWith('sb_publishable_') || !/^https:\/\/[a-z0-9-]+\.supabase\.co\/rest\/v1\/rpc$/.test(votingConfig.apiUrl))) throw new Error('Only a Supabase HTTPS RPC URL and a PUBLIC publishable key may be included in the website.');
+const files = ['index.html','vote.html','admin.html','styles.css','voting-pages.css','app.js','vote.js','admin.js','voting-api.js','voting-config.js','data.js','assets'];
 for (const path of files) await stat(resolve(root, path));
 for (const id of ['hero','king','positive','negative','pinned','delivery','funny','heart','wise']) await stat(resolve(root, `assets/cosmic/${id}.webp`));
 await mkdir(output, {recursive:true});

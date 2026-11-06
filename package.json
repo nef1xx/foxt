@@ -7,7 +7,14 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "build": "node scripts/build.mjs",
-    "check": "node --check app.js && node --check data.js && node --check scripts/serve.mjs && node --check scripts/build.mjs"
+    "check": "node --check app.js && node --check data.js && node --check voting-api.js && node --check voting-config.js && node --check vote.js && node --check admin.js && node --check scripts/serve.mjs && node --check scripts/build.mjs",
+    "test": "node --test tests/voting.test.mjs",
+    "dev:voting": "node scripts/serve.mjs --voting"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.15"
+  }
 }

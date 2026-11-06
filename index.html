@@ -16,6 +16,8 @@
   <link rel="preload" href="./assets/fonts/manrope-regular.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="./styles.css">
   <script src="./data.js" defer></script>
+  <script src="./voting-config.js" defer></script>
+  <script src="./voting-api.js" defer></script>
   <script src="./app.js" defer></script>
 </head>
 <body>
@@ -59,7 +61,7 @@
       </div>
     </section>
     <section class="voting section wrap" id="voting" aria-labelledby="voting-title">
-      <div class="voting-panel reveal"><div class="voting-art" aria-hidden="true"><img src="./assets/cosmic/heart.webp" alt="" loading="lazy" width="1024" height="1536"></div><div class="voting-orbit" aria-hidden="true"></div><div class="voting-content"><div class="section-label">03 / ГОЛОС СВОИХ</div><h2 id="voting-title">Один браток.<br><em>Один голос.</em></h2><p>Победителей выбирают свои. В голосование войдут четыре основные номинации и две из четырёх дополнительных. Дату старта объявим здесь.</p><button class="button button-primary" id="voting-action">Как будем голосовать <span aria-hidden="true">↗</span></button><span class="voting-small">Шорт-лист можно собрать уже сейчас</span></div><span class="panel-stamp" aria-hidden="true">✦<small>МЫ НА ОДНОЙ ОРБИТЕ</small></span></div>
+      <div class="voting-panel reveal"><div class="voting-art" aria-hidden="true"><img src="./assets/cosmic/heart.webp" alt="" loading="lazy" width="1024" height="1536"></div><div class="voting-orbit" aria-hidden="true"></div><div class="voting-content"><div class="section-label">03 / ГОЛОС СВОИХ</div><h2 id="voting-title">Один браток.<br><em>Один голос.</em></h2><p>Голосуем прямо на сайте: ник, личный код и один бюллетень. Четыре основные номинации и две из четырёх дополнительных. Организатор объявит старт.</p><button class="button button-primary" id="voting-action">Страница голосования <span aria-hidden="true">↗</span></button><span class="voting-small">Личный код выдаёт организатор</span></div><span class="panel-stamp" aria-hidden="true">✦<small>МЫ НА ОДНОЙ ОРБИТЕ</small></span></div>
     </section>
     <section class="legacy section wrap" id="legacy" aria-labelledby="legacy-title">
       <div class="section-label"><span>04 / УЖЕ В ИСТОРИИ</span><span class="label-star" aria-hidden="true">✦</span><span>НАЧАЛО НАШЕЙ ИСТОРИИ</span></div>
@@ -69,8 +71,8 @@
     </section>
     <section class="faq section wrap" id="faq" aria-labelledby="faq-title"><div><div class="section-label"><span class="orange-dot"></span> 05 / БЕЗ НЕДОПОНИМАНИЙ</div><h2 id="faq-title">Пара<br>вопросов.</h2><p class="faq-caption">Всё, что нужно знать<br>перед выбором своих легенд.</p></div><div class="faq-list">
       <details><summary>Что такое BRATKI 2026?<span aria-hidden="true">+</span></summary><p>Это локальная ежегодная премия нашей компании друзей. Отмечаем людей, шутки, игровые и жизненные моменты, которые сделали год особенным. В 2025 премия проходила в канале БРАТКИ INSIDE; в 2026 у неё своё имя и свой сайт.</p></details>
-      <details><summary>Когда можно будет голосовать?<span aria-hidden="true">+</span></summary><p>Дата пока не объявлена. Сейчас можно посмотреть номинации и собрать личный шорт-лист. Когда организаторы выберут формат и откроют голосование, на сайте появится ссылка и окончательные правила.</p></details>
-      <details><summary>Как защитим голосование от накрутки?<span aria-hidden="true">+</span></summary><p>Планируем допускать только участников компании по заранее подтверждённому списку и учитывать один голос от человека в каждой номинации. Способ подтверждения ещё выбираем; до его запуска сайт голоса не принимает.</p></details>
+      <details><summary>Когда можно будет голосовать?<span aria-hidden="true">+</span></summary><p>Организатор объявит старт и выдаст каждому участнику личный код. Текущий статус — на странице голосования. Пока можно собрать личный шорт-лист.</p></details>
+      <details><summary>Как защитим голосование от накрутки?<span aria-hidden="true">+</span></summary><p>Каждый участник получает код, привязанный к его нику. Сервер принимает один полный бюллетень на код; обновление страницы и смена браузера не дают дополнительных голосов. Организатор видит отметку об участии. Связка «ник → выбранные кандидаты» не сохраняется; результаты публикуются общей суммой после закрытия.</p></details>
       <details><summary>Шорт-лист уже считается голосом?<span aria-hidden="true">+</span></summary><p>Нет. Это личный черновик в этом браузере. Его можно изменить, удалить или скачать файлом. Он никуда автоматически не отправляется и не влияет на результаты.</p></details>
       <details><summary>Кого можно номинировать?<span aria-hidden="true">+</span></summary><p>Своих: участников компании и совместных историй этого года. В «Закрепе года» укажи автора и добавь сообщение или ссылку на него. Окончательный список номинантов подтвердят организаторы перед голосованием.</p></details>
       <details><summary>А где и когда награждение?<span aria-hidden="true">+</span></summary><p>Дату и формат встречи ещё согласуем. Объявление появится здесь после подтверждения. Пока самое время поднять старые клипы и вспомнить лучшие истории.</p></details>

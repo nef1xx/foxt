@@ -151,18 +151,18 @@
     toast('Личный шорт-лист сохранён файлом');
   });
   archive.forEach(winner => { const card = el('article', `legacy-card${winner.main ? ' main' : ''}`); card.innerHTML = icon(winner.icon); const text = el('div'); text.append(el('p', '', winner.title), el('h3', '', winner.name)); card.append(text); $('#legacy-grid').append(card); });
-  const votingURL = (() => { try { const url = new URL(voting.url); return url.protocol === 'https:' ? url.href : null; } catch { return null; } })();
-  $('#voting-action').addEventListener('click', () => { if (voting.status === 'open' && votingURL) location.assign(votingURL); else openDialog($('#rules-dialog')); });
-  if (voting.status === 'open' && votingURL) {
-    $('#voting-action').innerHTML = 'Перейти к голосованию <span aria-hidden="true">↗</span>';
-    $('.status').innerHTML = '<span></span> СЕЗОН 2026 · ГОЛОСОВАНИЕ ОТКРЫТО';
-    $('.voting-content>p').textContent = 'Голосование открыто. Подтверди участие и выбери своих легенд. Правила и сроки доступны на странице голосования.';
-    $('.catalog-note').textContent = 'Шорт-лист — черновик. Для отправки перейди к голосованию.';
-    $('.voting-small').textContent = 'Один голос в каждой номинации';
-    $('.shortlist-explanation').textContent = 'Этот личный черновик сохранён в браузере и никуда не отправлен. Чтобы проголосовать, перейди к голосованию в соответствующем разделе.';
-    $('.faq-list details:nth-child(2)>p').textContent = 'Голосование открыто. Перейди по кнопке в разделе «Один браток. Один голос». Окончательные правила и сроки указаны на странице голосования.';
-    $('.faq-list details:nth-child(3)>p').textContent = 'Голосование проходит во внешнем сервисе. Порядок подтверждения участника и окончательные правила указаны на его странице. Сам сайт BRATKI голоса не принимает.';
-  }
+  $('#voting-action').addEventListener('click', () => location.assign('./vote.html'));
+  if (window.BratkiVoting?.configured) window.BratkiVoting.rpc('bratki_state').then(state => {
+    if (state.status === 'open') {
+      $('#voting-action').innerHTML = 'Проголосовать <span aria-hidden="true">↗</span>';
+      $('.status').innerHTML = '<span></span> СЕЗОН 2026 · ГОЛОСОВАНИЕ ОТКРЫТО';
+      $('.voting-content>p').textContent = 'Голосование открыто. Введи ник и личный код от организатора, выбери по одному кандидату в каждой номинации и отправь бюллетень.';
+    } else if (state.status === 'closed') {
+      $('#voting-action').innerHTML = `${state.resultsPublished ? 'Смотреть итоги' : 'Голосование завершено'} <span aria-hidden="true">↗</span>`;
+      $('.status').innerHTML = '<span></span> СЕЗОН 2026 · ГОЛОСОВАНИЕ ЗАКРЫТО';
+      $('.voting-content>p').textContent = state.resultsPublished ? 'Голосование завершено. Общие результаты по номинациям опубликованы на странице голосования.' : 'Приём бюллетеней завершён. Организатор готовит публикацию общих результатов.';
+    }
+  }).catch(() => { $('.voting-small').textContent = 'Статус голосования можно проверить на его странице'; });
   const menuToggle = $('.menu-toggle');
   menuToggle.addEventListener('click', () => { const open = menuToggle.getAttribute('aria-expanded') === 'true'; menuToggle.setAttribute('aria-expanded', String(!open)); menuToggle.setAttribute('aria-label', open ? 'Открыть меню' : 'Закрыть меню'); $('#mobile-menu').hidden = open; });
   $('#mobile-menu').querySelectorAll('a').forEach(a => a.addEventListener('click', () => { $('#mobile-menu').hidden = true; menuToggle.setAttribute('aria-expanded', 'false'); menuToggle.setAttribute('aria-label', 'Открыть меню'); }));
