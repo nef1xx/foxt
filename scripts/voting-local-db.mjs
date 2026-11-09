@@ -17,10 +17,12 @@ export async function openVotingDatabase({memory=false,adminKey}={}) {
     await db.query('update bratki_private.settings set admin_hash=$1',[createHash('sha256').update(key).digest('hex')]);
     if (!memory) await writeFile(resolve(root,'.private/dev-admin.txt'),`Локальная проверка BRATKI — ключ организатора:\n${key}\n\nЭтот ключ не подходит для опубликованного сайта.\n`,{mode:0o600});
   }
+  const extraInstalled=await db.query("select exists(select 1 from information_schema.columns where table_schema='bratki_private' and table_name='settings' and column_name='extra_status') as installed");
+  if (!extraInstalled.rows[0].installed) await db.exec(await readFile(resolve(root,'supabase/migrations/202611100001_extra_nomination_vote.sql'),'utf8'));
   return db;
 }
 
-const methods={bratki_state:[],bratki_voter:['p_nick','p_code'],bratki_submit:['p_nick','p_code','p_choices'],bratki_admin:['p_key','p_action','p_payload']};
+const methods={bratki_state:[],bratki_voter:['p_nick','p_code'],bratki_submit:['p_nick','p_code','p_choices'],bratki_submit_extras:['p_nick','p_code','p_choices'],bratki_admin:['p_key','p_action','p_payload']};
 export async function callVotingRpc(db,name,payload={}) {
   if (!Object.hasOwn(methods,name)) throw new Error('BRATKI_UNKNOWN_ACTION');
   const keys=methods[name], values=keys.map(key=>key==='p_choices'||key==='p_payload'?JSON.stringify(payload[key]??{}):payload[key]??'');

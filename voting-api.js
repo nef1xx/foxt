@@ -2,6 +2,9 @@
   'use strict';
   const settings = window.BRATKI_VOTING || {};
   const messages = {
+    BRATKI_EXTRAS_CLOSED: 'Выбор дополнительных номинаций завершён. Обнови страницу, чтобы увидеть итоги первого этапа.',
+    BRATKI_INVALID_EXTRAS: 'Выбери ровно две разные дополнительные номинации из четырёх.',
+    BRATKI_EXTRAS_FIRST: 'Сначала должен завершиться трёхдневный выбор дополнительных номинаций.',
     BRATKI_INVALID_CODE: 'Ник или личный код не совпали. Проверь их по сообщению организатора.',
     BRATKI_ADMIN_DENIED: 'Ключ организатора не подошёл.',
     BRATKI_NOT_OPEN: 'Голосование сейчас закрыто. Бюллетень не отправлен.',
@@ -12,7 +15,7 @@
     BRATKI_DUPLICATE_NICK: 'Один из ников уже есть в списке. Убери повтор и попробуй ещё раз.',
     BRATKI_DUPLICATE_NAME: 'Ники участников и имена внутри одной номинации не должны повторяться.',
     BRATKI_CANNOT_REISSUE: 'Новый код можно выдать только тому, кто ещё не проголосовал.',
-    BRATKI_NOT_READY: 'Выбери ровно две дополнительные номинации, добавь хотя бы двух кандидатов в каждую активную номинацию и выдай коды участникам.',
+    BRATKI_NOT_READY: 'Дождись итогов первого этапа, добавь хотя бы двух кандидатов в каждую активную номинацию и выдай коды участникам.',
     BRATKI_CLOSE_FIRST: 'Сначала закрой голосование. Затем можно опубликовать итоги.',
   };
   const configured = Boolean(settings.apiUrl && settings.publishableKey);
@@ -54,5 +57,29 @@
     }
   }
   function download(name,text) { const url=URL.createObjectURL(new Blob(['\ufeff'+text],{type:'text/plain;charset=utf-8'}));const a=el('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000); }
-  window.BratkiVoting={configured,rpc,el,renderResults,download};
+  function countdown(root, extra, onExpire) {
+    if (!root) return () => {};
+    root.replaceChildren();root.hidden=!extra||extra.status!=='open';
+    if(root.hidden)return () => {};
+    root.append(el('p','countdown-label','ЭТАП 01 / ВЫБОР ДОПОЛНИТЕЛЬНЫХ НОМИНАЦИЙ'));
+    const values=el('div','countdown-values');
+    const parts=['дней','часов','минут','секунд'].map(label=>{const part=el('div'),number=el('strong','','00');part.append(number,el('span','',label));values.append(part);return number;});
+    values.setAttribute('role','timer');values.setAttribute('aria-live','off');root.append(values);
+    const deadline=new Date(extra.closesAt).getTime(),serverTime=new Date(extra.serverNow).getTime(),anchor=performance.now();
+    const end=el('p','countdown-end',`До ${new Intl.DateTimeFormat('ru',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Astrakhan'}).format(deadline)} · Астрахань (UTC+4)`);root.append(end);
+    let expired=false;
+    function tick(){const seconds=Math.max(0,Math.ceil((deadline-serverTime-(performance.now()-anchor))/1000));
+      [Math.floor(seconds/86400),Math.floor(seconds/3600)%24,Math.floor(seconds/60)%60,seconds%60].forEach((value,i)=>parts[i].textContent=String(value).padStart(2,'0'));
+      values.setAttribute('aria-label',`Осталось: ${parts[0].textContent} дней, ${parts[1].textContent} часов, ${parts[2].textContent} минут, ${parts[3].textContent} секунд`);
+      if(!seconds&&!expired){expired=true;end.textContent='Время вышло. Получаем итоги первого этапа…';onExpire?.();}
+    }
+    const timer=setInterval(tick,1000);tick();return ()=>clearInterval(timer);
+  }
+  function renderExtras(root,extra) {
+    root.replaceChildren();root.hidden=extra?.status!=='closed'||!extra.closesAt;if(root.hidden)return;
+    root.append(el('p','section-label','ЭТАП 01 / ИТОГИ'),el('h2','',extra.submitted?'Вы выбрали номинации.':'Первый этап завершён.'));
+    for(const option of extra.options){const row=el('div',`extra-result${option.selected?' is-selected':''}`);row.append(el('span','',`${option.selected?'✓ ':''}${option.title}`),el('strong','',`${option.votes} ${option.selected?'· В финале':''}`));root.append(row);}
+    root.append(el('p','field-hint',`${extra.submitted?'':'В первом этапе никто не проголосовал. ' }В финале — две номинации с наибольшим числом голосов. При равенстве выше номинация, которая раньше в списке: Завоз, Смешной, Сердце, Мудрость.`));
+  }
+  window.BratkiVoting={configured,rpc,el,renderResults,download,countdown,renderExtras};
 })();

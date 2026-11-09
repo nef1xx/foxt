@@ -2,32 +2,34 @@
 <html lang="ru">
 <head>
  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07090e">
- <meta name="referrer" content="no-referrer"><meta name="description" content="Голосование BRATKI 2026. Ник, личный код и один бюллетень.">
+ <meta name="referrer" content="no-referrer"><meta name="description" content="Голосование BRATKI 2026. Сначала выбери две дополнительные номинации из четырёх, затем — кандидатов.">
  <title>Голосование — BRATKI 2026</title><link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
  <link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./voting-pages.css">
- <script src="./voting-config.js" defer></script><script src="./voting-api.js" defer></script><script src="./vote.js" defer></script>
+ <script src="./data.js" defer></script><script src="./voting-config.js" defer></script><script src="./voting-api.js" defer></script><script src="./vote.js" defer></script>
 </head>
 <body class="voting-page">
  <a class="skip-link" href="#vote-main">Перейти к голосованию</a>
  <header class="header"><a class="brand" href="./index.html"><span class="brand-spark" aria-hidden="true">✦</span> BRATKI <span class="brand-year">2026</span></a><a class="back-link" href="./index.html">На главную ↗</a></header>
  <main id="vote-main" class="vote-shell">
-  <div class="section-label"><span>ГОЛОС СВОИХ / 2026</span><span aria-hidden="true">✦</span></div>
-  <div class="vote-heading"><h1>Твой голос.<br><em>Твои легенды.</em></h1><p>Ник, личный код и один бюллетень.<br>Твой выбор не показывается рядом с ником.</p></div>
+  <div class="section-label"><span id="vote-phase">ГОЛОС СВОИХ / 2026</span><span aria-hidden="true">✦</span></div>
+  <div class="vote-heading"><h1>Твой голос.<br><em>Твои легенды.</em></h1><p id="vote-heading-copy">Сначала — две дополнительные номинации. Затем — ваши кандидаты.</p></div>
+  <section class="extra-countdown" id="extra-countdown" aria-label="До конца первого этапа" hidden></section>
   <div class="election-info"><span class="status" id="election-status">ПОДКЛЮЧАЕМСЯ</span><p id="turnout" hidden></p><button type="button" class="quiet-button" id="refresh-state">Обновить ↻</button></div>
   <p class="message message-error" id="page-error" role="alert" hidden></p>
   <section class="availability-panel" id="availability" hidden><span class="availability-star" aria-hidden="true">✧</span><h2 id="availability-title">Голосование готовится</h2><p id="availability-copy"></p></section>
   <ol class="vote-steps" id="vote-steps" aria-label="Этапы голосования" hidden><li id="step-identity" aria-current="step"><span>01</span> Ник и код</li><li id="step-ballot"><span>02</span> Выбор</li><li id="step-review"><span>03</span> Проверка</li></ol>
   <section id="identity-section" class="identity-panel" hidden>
-   <div><h2>Сначала —<br><em>подтвердим своих.</em></h2><p class="muted-copy">Личный код выдаёт организатор. Он привязан к твоему нику и подходит для одного полного бюллетеня.</p></div>
+   <div><h2>Сначала —<br><em>подтвердим своих.</em></h2><p class="muted-copy">Личный код выдаёт организатор. Один код подходит для обоих этапов: один голос за номинации и один — за кандидатов. Сохрани его до конца премии.</p></div>
    <form id="identity-form" class="voting-form">
     <label for="voter-nick">Твой ник</label><input id="voter-nick" name="nickname" maxlength="60" autocomplete="nickname" required aria-describedby="nick-hint"><p class="field-hint" id="nick-hint">Как в сообщении с личным кодом.</p>
     <label for="voter-code">Личный код</label><div class="password-field"><input id="voter-code" name="code" type="password" maxlength="100" autocomplete="one-time-code" spellcheck="false" aria-describedby="code-hint" required><button type="button" class="quiet-button" id="show-code" aria-pressed="false" aria-controls="voter-code">Показать</button></div><p class="field-hint" id="code-hint">Можно вставить целиком, с дефисами. Не передавай код другим.</p>
     <p class="message message-error" id="identity-error" role="alert" hidden></p><button class="button button-primary" type="submit" id="identity-submit">Перейти к выбору <span aria-hidden="true">↗</span></button>
    </form>
   </section>
-  <section id="ballot-section" hidden><div class="ballot-intro"><h2>Выбирай <em>своих.</em></h2><p class="muted-copy" id="ballot-person"></p></div><form id="ballot-form"><div id="ballot-fields"></div><p class="message message-error" id="ballot-error" role="alert" hidden></p><div class="flow-actions"><button type="button" class="quiet-button" id="change-person">Другой ник и код</button><button type="submit" class="button button-primary">Проверить бюллетень <span aria-hidden="true">↗</span></button></div></form></section>
-  <section id="review-section" hidden><h2>Всё <em>верно?</em></h2><p class="muted-copy">После отправки заменить выбор нельзя. Один код учитывает один бюллетень.</p><dl class="review-list" id="review-list"></dl><form id="submit-form"><label class="check-line"><input type="checkbox" id="confirm-ballot" required><span>Я проверил выбор и готов отправить бюллетень.</span></label><p class="message message-error" id="submit-error" role="alert" hidden></p><div class="flow-actions"><button type="button" class="quiet-button" id="back-to-ballot">← Изменить выбор</button><button type="submit" class="button button-primary" id="submit-ballot">Отправить голос <span aria-hidden="true">✦</span></button></div><p class="field-hint">Сервер учтёт весь бюллетень и отметит участие. Связка «ник → выбранные кандидаты» в базе не сохраняется.</p></form></section>
-  <section class="success-panel" id="success-section" role="status" hidden><span class="availability-star" aria-hidden="true">✦</span><h2>Голос <em>учтён.</em></h2><p id="success-copy"></p><p class="muted-copy">Итоги появятся здесь после закрытия голосования и публикации организатором.</p><a class="button button-primary" href="./index.html">Вернуться к BRATKI 2026 <span aria-hidden="true">↗</span></a></section>
+  <section id="ballot-section" hidden><div class="ballot-intro"><h2 id="ballot-title">Какие две — в финал?</h2><p class="muted-copy" id="ballot-person"></p></div><form id="ballot-form"><div id="ballot-fields"></div><p class="selection-count" id="extra-selection-count" role="status" hidden></p><p class="message message-error" id="ballot-error" role="alert" hidden></p><div class="flow-actions"><button type="button" class="quiet-button" id="change-person">Другой ник и код</button><button type="submit" class="button button-primary">Проверить бюллетень <span aria-hidden="true">↗</span></button></div></form></section>
+  <section id="review-section" hidden><h2>Всё <em>верно?</em></h2><p class="muted-copy">После отправки заменить выбор нельзя. Один код учитывает один бюллетень на каждом этапе.</p><dl class="review-list" id="review-list"></dl><form id="submit-form"><label class="check-line"><input type="checkbox" id="confirm-ballot" required><span>Я проверил выбор и готов отправить бюллетень.</span></label><p class="message message-error" id="submit-error" role="alert" hidden></p><div class="flow-actions"><button type="button" class="quiet-button" id="back-to-ballot">← Изменить выбор</button><button type="submit" class="button button-primary" id="submit-ballot">Отправить голос <span aria-hidden="true">✦</span></button></div><p class="field-hint">Сервер учтёт весь бюллетень и отметит участие. Связка «ник → выбранные кандидаты» в базе не сохраняется.</p></form></section>
+  <section class="success-panel" id="success-section" role="status" hidden><span class="availability-star" aria-hidden="true">✦</span><h2>Голос <em>учтён.</em></h2><p id="success-copy"></p><p class="muted-copy" id="success-next">Итоги появятся после завершения этапа.</p><a class="button button-primary" href="./index.html">Вернуться к BRATKI 2026 <span aria-hidden="true">↗</span></a></section>
+  <section class="extra-results" id="extra-results" hidden></section>
   <section id="results-section" class="results-section" hidden><div class="section-label">РЕЗУЛЬТАТЫ / BRATKI 2026</div><h2>Выбор <em>братков.</em></h2><p class="muted-copy">Общие результаты по номинациям. Индивидуальные бюллетени не публикуются.</p><div id="results-content"></div></section>
  </main>
  <footer class="vote-footer"><span>BRATKI 2026</span><a href="./admin.html">Организатору ↗</a></footer>
