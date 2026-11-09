@@ -57,6 +57,7 @@
     dialog.addEventListener('close', () => { if (![...dialogs].some(d => d.open)) { document.body.style.overflow = ''; const focusTarget = lastFocus?.isConnected && !lastFocus.closest('dialog:not([open])') ? lastFocus : $('[data-open-shortlist]'); focusTarget?.focus({preventScroll:true}); } });
   });
   document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => button.closest('dialog').close()));
+  function supportLink() { const link=el('a','donate-text','♡ Задонатьте Нефиксу ↗');link.href='https://donatex.gg/donate/nef1x';link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label','Задонатьте Нефиксу — DonateX, новая вкладка');return link; }
   function renderNominations() {
     grid.replaceChildren();
     const groups = [
@@ -84,6 +85,7 @@
         });
         card.addEventListener('pointerleave', () => { card.style.setProperty('--tilt-x', '0deg'); card.style.setProperty('--tilt-y', '0deg'); });
         grid.append(card);
+        if(index%2===0){const support=el('aside','nomination-support');support.append(el('p','','Задонатьте Нефиксу ♡'),supportLink());grid.append(support);}
         revealObserver.observe(card);
       });
     });
@@ -150,7 +152,7 @@
     const url = URL.createObjectURL(blob); const a = el('a'); a.href = url; a.download = `BRATKI-${year}-shortlist.txt`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast('Личный шорт-лист сохранён файлом');
   });
-  archive.forEach(winner => { const card = el('article', `legacy-card${winner.main ? ' main' : ''}`); card.innerHTML = icon(winner.icon); const text = el('div'); text.append(el('p', '', winner.title), el('h3', '', winner.name)); card.append(text); $('#legacy-grid').append(card); });
+  archive.forEach(winner => { const card = el('article', `legacy-card${winner.main ? ' main' : ''}`); card.innerHTML = icon(winner.icon); const text = el('div'); text.append(el('p', '', winner.title), el('h3', '', winner.name), supportLink()); card.append(text); $('#legacy-grid').append(card); });
   $('#voting-action').addEventListener('click', () => location.assign('./vote.html'));
   let stopHomeCountdown=()=>{};
   function updateVotingState() { if (window.BratkiVoting?.configured) window.BratkiVoting.rpc('bratki_state').then(state => {
