@@ -141,7 +141,7 @@
       row.append(text, edit); content.append(row);
     }
   }
-  document.querySelectorAll('[data-open-shortlist]').forEach(button => button.addEventListener('click', () => { renderShortlist(); openDialog($('#shortlist-dialog')); }));
+  document.querySelectorAll('[data-open-shortlist]').forEach(button => button.addEventListener('click', () => { renderShortlist(); $('#mobile-menu').hidden=true;$('.menu-toggle').setAttribute('aria-expanded','false');$('.menu-toggle').setAttribute('aria-label','Открыть меню');if(button.closest('#mobile-menu'))$('.menu-toggle').focus();openDialog($('#shortlist-dialog')); }));
   $('#clear-shortlist').addEventListener('click', () => { shortlist = {}; persist(); renderNominations(); renderShortlist(); toast('Шорт-лист очищен'); $('#shortlist-title').tabIndex = -1; $('#shortlist-title').focus(); });
   $('#download-shortlist').addEventListener('click', () => {
     const lines = [`BRATKI ${year} — личный шорт-лист`, 'ЧЕРНОВИК. Не отправленный голос.', ''];
@@ -160,7 +160,7 @@
       $('#voting-action').innerHTML='Выбрать 2 из 4 <span aria-hidden="true">↗</span>';
       $('.status').textContent=state.extra.status==='open'?'СЕЗОН 2026 · ВЫБИРАЕМ НОМИНАЦИИ':'СЕЗОН 2026 · ПЕРВЫЙ ЭТАП ГОТОВИТСЯ';
       $('.voting-content>p').textContent='Первый этап — выбор двух дополнительных номинаций из четырёх. У тебя три дня и один голос за две номинации. Введи ник и личный код, отметь свой выбор и отправь его.';
-      $('.voting-small').textContent='Сохрани код — он понадобится и для голосования за кандидатов';
+      if(state.extra.status==='pending'){$('#voting-action').innerHTML='Первый этап <span aria-hidden="true">↗</span>';$('.voting-content>p').textContent='Первый этап откроет организатор. После старта будет 72 часа, чтобы выбрать две дополнительные номинации из четырёх. Подготовь ник и личный код.';}$('.voting-small').textContent='Сохрани код — он понадобится и для голосования за кандидатов';
     } else if (state.status === 'open') {
       $('#voting-title').innerHTML='Один браток.<br><em>Один голос.</em>';
       $('#voting-action').innerHTML = 'Проголосовать <span aria-hidden="true">↗</span>';

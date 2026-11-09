@@ -12,7 +12,7 @@ GitHub Pages обслуживает интерфейс. База, проверк
 ## Развёртывание в новом проекте Supabase
 
 1. Подключить Supabase к чату и создать отдельный проект BRATKI. Не применять миграцию к чужой рабочей базе.
-2. Применить миграции `supabase/migrations/202611070001_voting.sql`, затем `supabase/migrations/202611100001_extra_nomination_vote.sql` через управление проектом. Для уже подключённого проекта нужна только вторая миграция. `pgcrypto` используется в схеме `extensions`.
+2. Применить миграции `supabase/migrations/202611070001_voting.sql`, затем `supabase/migrations/202611100001_extra_nomination_vote.sql` и `supabase/migrations/202611100002_explicit_settings_filter.sql` через управление проектом. Для уже подключённого проекта нужны вторая и третья миграции; третья обеспечивает совместимость с Supabase safeupdate и не меняет состояние этапов. `pgcrypto` используется в схеме `extensions`.
 3. Выполнить `node scripts/prepare-voting-admin.mjs` один раз, если `.private/production-admin.txt` ещё не существует. Скрипт откажется случайно менять уже созданный ключ.
 4. Выполнить содержимое `.private/bootstrap-admin.sql` через привилегированное управление Supabase. Оно задаёт только хеш ключа организатора; браузерные пользователи сделать это не могут.
 5. Указать в `voting-config.js`:

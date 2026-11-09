@@ -19,6 +19,7 @@ export async function openVotingDatabase({memory=false,adminKey}={}) {
   }
   const extraInstalled=await db.query("select exists(select 1 from information_schema.columns where table_schema='bratki_private' and table_name='settings' and column_name='extra_status') as installed");
   if (!extraInstalled.rows[0].installed) await db.exec(await readFile(resolve(root,'supabase/migrations/202611100001_extra_nomination_vote.sql'),'utf8'));
+  await db.exec(await readFile(resolve(root,'supabase/migrations/202611100002_explicit_settings_filter.sql'),'utf8'));
   return db;
 }
 
